@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-PETITBOOT_VERSION = d171258160f7ed4756531f51e66fb116753bc990
-PETITBOOT_SITE = git://github.com/open-power/petitboot.git
+PETITBOOT_VERSION = v1.0.0
+PETITBOOT_SITE ?= $(call github,open-power,petitboot,$(PETITBOOT_VERSION))
 PETITBOOT_DEPENDENCIES = ncurses udev host-bison host-flex lvm2
 PETITBOOT_LICENSE = GPLv2
 PETITBOOT_LICENSE_FILES = COPYING
@@ -23,6 +23,13 @@ ifdef PETITBOOT_DEBUG
 PETITBOOT_CONF_OPTS += --enable-debug
 endif
 
+ifeq ($(BR2_PACKAGE_PETITBOOT_MTD),y)
+PETITBOOT_CONF_OPTS += --enable-mtd
+PETITBOOT_DEPENDENCIES += libflash
+PETITBOOT_CPPFLAGS += -I$(STAGING_DIR)
+PETITBOOT_LDFLAGS += -L$(STAGING_DIR)
+endif
+
 ifeq ($(BR2_PACKAGE_NCURSES_WCHAR),y)
 PETITBOOT_CONF_OPTS += --with-ncursesw MENU_LIB=-lmenuw FORM_LIB=-lformw
 endif
@@ -38,6 +45,8 @@ define PETITBOOT_POST_INSTALL
 	$(INSTALL) -D -m 0755 $(@D)/utils/hooks/20-set-stdout \
 		$(TARGET_DIR)/etc/petitboot/boot.d/
 	$(INSTALL) -D -m 0755 $(@D)/utils/hooks/90-sort-dtb \
+		$(TARGET_DIR)/etc/petitboot/boot.d/
+	$(INSTALL) -D -m 0755 $(@D)/utils/hooks/30-add-offb \
 		$(TARGET_DIR)/etc/petitboot/boot.d/
 
 	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL)/package/petitboot/S14silence-console \
